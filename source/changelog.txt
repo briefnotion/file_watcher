@@ -1,0 +1,7 @@
+0.001_241229
+  - Created
+      Usage: ./filewatch <filename>
+    
+      Commands:
+      bye       - Exits the program
+      FORCEEXIT - Ends the program
