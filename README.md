@@ -7,6 +7,9 @@
 
 ## Requirements
 - Boost libraries are required to compile and run the program.
+  ```sh
+  sudo apt install libboost-filesystem-dev
+  
 - A `CMakeLists.txt` file is provided for building the project.
 
 ## Functionality
@@ -26,7 +29,7 @@
 4. **Error Handling**:
    - Proper error handling is implemented for some scenarios.
 
-## Usage
+## Compilation and Usage
 1. Build the project using CMake from the existing `build` directory:
    ```sh
    cd build
