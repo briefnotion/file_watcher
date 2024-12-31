@@ -63,7 +63,7 @@ int main_loop(string FileName)
     sdSystem.OUTPUT_INPUT.create(1);
 
     // Output Text Box:
-    sdSystem.OUTPUT_RESPONSE.PROPS.TITLE = "  OUTPUT";
+    sdSystem.OUTPUT_RESPONSE.PROPS.TITLE = "  OUTPUT  ----- ( " +   sdSystem.FILEWATCH_FILENAME + " ) ";
     sdSystem.OUTPUT_RESPONSE.PROPS.POSITION_X = 0;
     sdSystem.OUTPUT_RESPONSE.PROPS.POSITION_Y = 2;
     sdSystem.OUTPUT_RESPONSE.PROPS.LINES = 100;
@@ -113,6 +113,7 @@ int main_loop(string FileName)
 
     // ------------------------------------------------------------------------- //
     // Show Clock and Status
+    if (sdSystem.OUTPUT_INPUT.value() != "")
     {
       processor_status_display_simple = " (File Watcher) ";
 

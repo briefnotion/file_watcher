@@ -1,3 +1,8 @@
+0.002_241231
+  - Clock not displayed if input is empty.
+      Scrolling up in the console works better.
+  - Output line shows filename.
+
 0.001_241229
   - Created
       Usage: ./filewatch <filename>
