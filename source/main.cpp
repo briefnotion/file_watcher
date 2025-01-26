@@ -156,6 +156,7 @@ int main_loop(string FileName)
     {
       if (sdSystem.FILE_WATCHER.changed())
       {
+        sdSystem.INPUT.clear_screeen();
         sdSystem.OUTPUT_RESPONSE.clear();
         sdSystem.OUTPUT_RESPONSE.add_to(file_to_string(sdSystem.FILEWATCH_FILENAME), sdSystem.OUTPUT_FOCUS);
       }

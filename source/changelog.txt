@@ -1,3 +1,6 @@
+0.003_240125
+  - Screen clears on change.
+
 0.002_241231
   - Clock not displayed if input is empty.
       Scrolling up in the console works better.
