@@ -41,6 +41,7 @@ void clear_line();    // Clears the current line.
 void clear_lines(int Number_Of_Lines); // Clears a number of lines starting at the current line.
 void move_up_a_line(); // Moves the cursor up one line.
 void get_console_size(int &Rows, int &Cols); // Gets the size of the console window.
+string reverse(string Text); // Reverse the order of characters in a string.
 
 void kb_pause(string Message = "DO NOT PRINT");
 // pause program till space is pressed

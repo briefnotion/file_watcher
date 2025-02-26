@@ -130,6 +130,11 @@ void get_console_size(int &Rows, int &Cols)
   cout << "\033[u";
 }
 
+string reverse(string Text)
+{
+  return "\033[7;37m" + Text + "\033[0m";
+}
+
 void kb_pause(string Message)
 {
   char char_received = 'X';
@@ -362,8 +367,8 @@ void TTY_OUTPUT::output(TTY_OUTPUT_FOCUS &Output_Focus)
 
       if (DRAW_TITLE)
       {
-        cout << linemerge_left_justify("-------------------------------------------------------------------------", 
-                                        PROPS.TITLE) << endl;
+        cout << reverse(linemerge_left_justify("-------------------------------------------------------------------------", 
+                      PROPS.TITLE)) << endl;
         cout << OUTPUT_STRING << flush;
       }
       else

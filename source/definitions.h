@@ -34,7 +34,7 @@
 // 15 - 60 fps
 //#define SCREENUPDATEDELAY 30  // in milliseconds 
 #define SCREENIO_SLEEP_TIMER_DELAY  30  // This will be in frames per second (fps)
-#define FILE_WATCHER_DELAY          1   // This will be in frames per second (fps)
+#define FILE_WATCHER_DELAY          5   // This will be in frames per second (fps)
 
 #define TEST_MODE           false
 

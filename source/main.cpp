@@ -63,7 +63,7 @@ int main_loop(string FileName)
     sdSystem.OUTPUT_INPUT.create(1);
 
     // Output Text Box:
-    sdSystem.OUTPUT_RESPONSE.PROPS.TITLE = "  OUTPUT  ----- ( " +   sdSystem.FILEWATCH_FILENAME + " ) ";
+    sdSystem.OUTPUT_RESPONSE.PROPS.TITLE = "  OUTPUT  ----- ( " + sdSystem.FILEWATCH_FILENAME + " ) ";
     sdSystem.OUTPUT_RESPONSE.PROPS.POSITION_X = 0;
     sdSystem.OUTPUT_RESPONSE.PROPS.POSITION_Y = 2;
     sdSystem.OUTPUT_RESPONSE.PROPS.LINES = 100;
@@ -123,10 +123,11 @@ int main_loop(string FileName)
         
         sdSystem.OUTPUT_CLOCK.clear();
         sdSystem.OUTPUT_CLOCK.redraw();
-        sdSystem.OUTPUT_CLOCK.add_to(linemerge_left_justify("-------------------------------------------------------------------------", 
+        sdSystem.OUTPUT_CLOCK.add_to(reverse(linemerge_left_justify("-------------------------------------------------------------------------", 
                                       processor.what_is_it() +
                                       processor_status_display_simple +
-                                      " INPUT:"), sdSystem.OUTPUT_FOCUS);
+                                      + " ( " + sdSystem.FILEWATCH_FILENAME + " ) " + 
+                                      " INPUT:")), sdSystem.OUTPUT_FOCUS);
       }
     }
 
@@ -158,7 +159,10 @@ int main_loop(string FileName)
       {
         sdSystem.INPUT.clear_screeen();
         sdSystem.OUTPUT_RESPONSE.clear();
+        sdSystem.OUTPUT_RESPONSE.add_to(reverse("***** BEGIN *****"), sdSystem.OUTPUT_FOCUS);
+        sdSystem.OUTPUT_RESPONSE.seperater(sdSystem.OUTPUT_FOCUS);
         sdSystem.OUTPUT_RESPONSE.add_to(file_to_string(sdSystem.FILEWATCH_FILENAME), sdSystem.OUTPUT_FOCUS);
+        sdSystem.OUTPUT_RESPONSE.add_to(reverse("*****  END *****"), sdSystem.OUTPUT_FOCUS);
       }
     }
 

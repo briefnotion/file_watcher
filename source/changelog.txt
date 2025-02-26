@@ -1,4 +1,9 @@
-0.003_240125
+0.004_250212
+  - Added a begin and end to the file Output
+  - Changed to refresh time to 5 times per second.
+  - Some text is now printed in reverse for visibility.
+
+0.003_250125
   - Screen clears on change.
 
 0.002_241231
