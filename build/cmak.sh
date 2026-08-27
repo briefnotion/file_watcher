@@ -1,1 +1,1 @@
-cmake -S ../source -B ../build .
+cmake -S ../source -B ../build

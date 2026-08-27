@@ -12,7 +12,6 @@ filewatch
 *.internal
 *.o
 build/CMakeFiles/TargetDirectories.txt
-build/CMakeFiles/chatapi.dir/link.txt
 *.ts
 build/CMakeFiles/filewatch.dir/link.txt
 build/CMakeFiles/3.28.3/CompilerIdC/CMakeCCompilerId.c

@@ -71,7 +71,7 @@ class FILE_WATCH
   streampos POSITION;
 
   // File Properties
-  time_t LAST_WRITE_TIME;
+  time_t LAST_WRITE_TIME = 0;
 
   bool CHANGED = false;
 
