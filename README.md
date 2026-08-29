@@ -1,33 +1,45 @@
 # file_watcher
 
 ## Overview
-`file_watcher` is a program that reads and displays the contents of a file on the screen in real-time. Any changes made to the file will be reflected on the screen immediately. The program also supports two special commands:
-- `bye`: Exits the program gracefully.
-- `FORCEEXIT`: Terminates the program immediately.
+`file_watcher` is a terminal program that displays the contents of a file and
+keeps them live-updated as the file changes — a scrollable, ncurses-based
+viewer with line numbers, a status bar, and a command line for jumping
+around.
 
 ## Requirements
-- Boost libraries are required to compile and run the program.
+- A built `ncursesw` at `../../ncurses-snapshots/install` (a sibling checkout
+  next to this project, same convention as the `olli` project). If it isn't
+  there yet:
   ```sh
-  sudo apt install libboost-filesystem-dev
+  git clone https://github.com/ThomasDickey/ncurses-snapshots.git ../../ncurses-snapshots
+  cd ../../ncurses-snapshots
+  mkdir build && cd build
+  ../configure --prefix=$(pwd)/../install --without-shared \
+    --enable-widec --without-debug --without-ada --without-tests \
+    --without-manpages --without-progs
+  make -j && make install
   ```
 - A `CMakeLists.txt` file is provided for building the project.
 
 ## Functionality
-1. **Initialization**:
-   - The program takes a filename as a command-line argument.
-   - It initializes necessary resources and opens the specified file for reading.
 
-2. **File Monitoring**:
-   - The program continuously monitors the file for any changes.
-   - Whenever a change is detected, the program reads the updated content and refreshes the display.
-
-3. **Command Handling**:
-   - The user can input commands in the terminal while the program is running.
-   - Typing `bye` will gracefully exit the program, ensuring all resources are properly released.
-   - Typing `FORCEEXIT` will immediately terminate the program.
-
-4. **Error Handling**:
-   - Proper error handling is implemented for some scenarios.
+- **Live updates**: the file is re-read whenever its modification time
+  changes, and the view follows the end of the file automatically as long
+  as you haven't scrolled away from the bottom.
+- **Line numbers**: a gutter on the left shows the line number of every
+  displayed line.
+- **Status bar**: the top line shows the filename, the time of the last
+  detected change, and either `[FOLLOWING]` or your current line position.
+- **Resizable**: resizing the terminal reflows the view immediately.
+- **Scrolling and commands**, via the keyboard:
+  | Key                | Action                                   |
+  |--------------------|-------------------------------------------|
+  | `Up` / `Down`      | Scroll one line                           |
+  | `PgUp` / `PgDn`    | Scroll one screen                         |
+  | `Home`             | Jump to the top                           |
+  | `End`              | Jump to the bottom and resume following   |
+  | *(number)* `Enter` | Go to that line number                    |
+  | `q` `Enter`        | Quit                                      |
 
 ## Compilation and Usage
 1. Build the project using CMake from the existing `build` directory:
@@ -42,8 +54,6 @@
    ```sh
    ./filewatch filename.txt
    ```
-
-   Enter `bye` to exit or `FORCEEXIT` to quit the program forcefully.
 
 ## Installing the Command System-Wide
 

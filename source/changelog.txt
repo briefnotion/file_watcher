@@ -1,3 +1,10 @@
+0.005_260829
+  - Rebuilt on ncurses. Resizable window, scrollable view with line
+    numbers, status bar (filename + last change time), and a command
+    line for "q" to quit or a line number to jump to.
+  - Dropped the Boost dependency; file-change detection now uses
+    plain POSIX stat().
+
 0.004_250212
   - Added a begin and end to the file Output
   - Changed to refresh time to 5 times per second.
