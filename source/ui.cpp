@@ -6,7 +6,10 @@
 
 #include <ncursesw/curses.h>
 #include <csignal>
+#include <clocale>
 #include <cstdlib>
+#include <cwchar>
+#include <wchar.h>
 #include <algorithm>
 
 using namespace std;
@@ -31,6 +34,66 @@ static int digit_count(size_t Value)
   return count;
 }
 
+// Splits Text into chunks whose terminal display width - accounting for
+//  multi-byte UTF-8 characters and their actual column width - does not
+//  exceed Width. Never cuts in the middle of a multi-byte character.
+static vector<string> wrap_text_by_display_width(const string &Text, size_t Width)
+{
+  vector<string> segments;
+
+  if (Text.empty())
+  {
+    segments.push_back("");
+    return segments;
+  }
+
+  mbstate_t state{};
+
+  size_t seg_start = 0;
+  size_t seg_width = 0;
+  size_t pos = 0;
+
+  while (pos < Text.size())
+  {
+    wchar_t wc;
+    size_t char_bytes = mbrtowc(&wc, Text.c_str() + pos, Text.size() - pos, &state);
+    size_t advance;
+    int char_width;
+
+    if (char_bytes == (size_t)-1 || char_bytes == (size_t)-2)
+    {
+      // Invalid or incomplete multi-byte sequence: consume one raw byte
+      //  so we still make forward progress instead of getting stuck.
+      state = mbstate_t{};
+      advance = 1;
+      char_width = 1;
+    }
+    else
+    {
+      // mbrtowc() returns 0 for an embedded NUL, but it still consumed
+      //  that one byte.
+      advance = (char_bytes == 0) ? 1 : char_bytes;
+
+      int w = wcwidth(wc);
+      char_width = (w < 0) ? 1 : w; // unprintable/control: count as 1, stay safe
+    }
+
+    if (seg_width + (size_t)char_width > Width && seg_width > 0)
+    {
+      segments.push_back(Text.substr(seg_start, pos - seg_start));
+      seg_start = pos;
+      seg_width = 0;
+    }
+
+    seg_width += (size_t)char_width;
+    pos += advance;
+  }
+
+  segments.push_back(Text.substr(seg_start, pos - seg_start));
+
+  return segments;
+}
+
 vector<VISUAL_ROW> wrap_lines(const vector<string> &Lines, int Width)
 {
   vector<VISUAL_ROW> rows;
@@ -39,22 +102,12 @@ vector<VISUAL_ROW> wrap_lines(const vector<string> &Lines, int Width)
 
   for (int i = 0; i < (int)Lines.size(); ++i)
   {
-    const string &line = Lines[(size_t)i];
+    vector<string> segments = wrap_text_by_display_width(Lines[(size_t)i], width);
 
-    if (line.empty())
-    {
-      rows.push_back(VISUAL_ROW{i, true, ""});
-      continue;
-    }
-
-    size_t pos = 0;
     bool first = true;
-
-    while (pos < line.size())
+    for (const string &segment : segments)
     {
-      size_t take = min(width, line.size() - pos);
-      rows.push_back(VISUAL_ROW{i, first, line.substr(pos, take)});
-      pos += take;
+      rows.push_back(VISUAL_ROW{i, first, segment});
       first = false;
     }
   }
@@ -64,6 +117,8 @@ vector<VISUAL_ROW> wrap_lines(const vector<string> &Lines, int Width)
 
 void TERMINAL_UI::init()
 {
+  setlocale(LC_ALL, ""); // required before initscr() for wide/UTF-8 output
+
   initscr();
   cbreak();
   noecho();
@@ -201,9 +256,14 @@ void TERMINAL_UI::draw(const vector<VISUAL_ROW> &Visual_Rows, size_t Total_Sourc
     status += "line 0/" + to_string(Total_Source_Lines);
   }
 
+  // addnstr's length limit counts bytes, not display columns, so a
+  //  multibyte status string (e.g. a Unicode filename) needs clipping by
+  //  display width ourselves before handing it to an unbounded add call.
+  string status_clipped = wrap_text_by_display_width(status, (size_t)max(0, cols))[0];
+
   attron(A_REVERSE);
   mvhline(0, 0, ' ', cols);
-  mvaddnstr(0, 0, status.c_str(), cols);
+  mvaddstr(0, 0, status_clipped.c_str());
   attroff(A_REVERSE);
 
   // ---- Content area, with a line-number gutter ----
@@ -236,11 +296,14 @@ void TERMINAL_UI::draw(const vector<VISUAL_ROW> &Visual_Rows, size_t Total_Sourc
       mvaddch(screen_row, gutter_w + 1, '|');
 
       int text_x = gutter_w + 3;
-      int text_w = cols - text_x;
 
-      if (text_w > 0)
+      // row.text was already wrapped to fit content_text_width() display
+      //  columns, so it can be printed unbounded rather than re-clamped
+      //  by addnstr's byte-count limit (which could otherwise cut a
+      //  multibyte character in half).
+      if (cols - text_x > 0)
       {
-        mvaddnstr(screen_row, text_x, row.text.c_str(), text_w);
+        mvaddstr(screen_row, text_x, row.text.c_str());
       }
     }
     else

@@ -6,6 +6,10 @@
     plain POSIX stat().
   - Long lines wrap onto extra screen rows instead of being cut off
     at the right edge.
+  - Fixed misaligned wrapping/gutter on lines with multi-byte UTF-8
+    characters (emoji, accented letters, etc.) - the program never
+    called setlocale(), so ncursesw and the wrap logic were treating
+    those bytes as plain 1-byte-per-column ASCII.
 
 0.004_250212
   - Added a begin and end to the file Output
