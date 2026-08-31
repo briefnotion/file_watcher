@@ -32,6 +32,40 @@ static int clamp_top_line(int Top_Line, int Total_Lines, int Content_Height)
 
 // ------------------------------------------------------------------------- //
 
+// Finds the visual row where a (0-indexed) source line first appears,
+//  after wrapping. Clamps out-of-range source lines to the nearest end.
+static int visual_row_for_source_line(const vector<VISUAL_ROW> &Visual_Rows, int Source_Line)
+{
+  if (Visual_Rows.empty())
+  {
+    return 0;
+  }
+
+  if (Source_Line <= Visual_Rows.front().source_line)
+  {
+    return 0;
+  }
+
+  for (size_t i = 0; i < Visual_Rows.size(); ++i)
+  {
+    if (Visual_Rows[i].source_line == Source_Line && Visual_Rows[i].is_first_segment)
+    {
+      return (int)i;
+    }
+  }
+
+  // Past the end of the file: land on the last line's first segment.
+  for (size_t i = Visual_Rows.size(); i-- > 0;)
+  {
+    if (Visual_Rows[i].is_first_segment)
+    {
+      return (int)i;
+    }
+  }
+
+  return 0;
+}
+
 int main_loop(const string &Filename)
 {
   FILE_WATCH watcher;
@@ -41,12 +75,18 @@ int main_loop(const string &Filename)
   ui.init();
 
   vector<string> lines;
+  vector<VISUAL_ROW> visual_rows;
   string last_change = "--:--:--";
 
-  int top_line = 0;
+  int top_row = 0;
   bool following = true;
   bool running = true;
   bool first_check = true;
+
+  auto rebuild_visual_rows = [&]()
+  {
+    visual_rows = wrap_lines(lines, ui.content_text_width(lines.size()));
+  };
 
   while (running)
   {
@@ -65,14 +105,19 @@ int main_loop(const string &Filename)
       }
 
       last_change = watcher.last_change_time_string();
+      rebuild_visual_rows();
 
       if (following)
       {
-        top_line = clamp_top_line((int)lines.size(), (int)lines.size(), ui.content_height());
+        top_row = clamp_top_line((int)visual_rows.size(), (int)visual_rows.size(), ui.content_height());
+      }
+      else
+      {
+        top_row = clamp_top_line(top_row, (int)visual_rows.size(), ui.content_height());
       }
     }
 
-    ui.draw(lines, Filename, last_change, following, top_line);
+    ui.draw(visual_rows, lines.size(), Filename, last_change, following, top_row);
 
     UI_INPUT_RESULT result = ui.poll_input();
 
@@ -83,42 +128,52 @@ int main_loop(const string &Filename)
         break;
 
       case UI_ACTION::RESIZE:
-        top_line = clamp_top_line(top_line, (int)lines.size(), ui.content_height());
+        // The content width may have changed, so wrapping needs redoing.
+        rebuild_visual_rows();
+        if (following)
+        {
+          top_row = clamp_top_line((int)visual_rows.size(), (int)visual_rows.size(), ui.content_height());
+        }
+        else
+        {
+          top_row = clamp_top_line(top_row, (int)visual_rows.size(), ui.content_height());
+        }
         break;
 
       case UI_ACTION::SCROLL_UP:
         following = false;
-        top_line = clamp_top_line(top_line - 1, (int)lines.size(), ui.content_height());
+        top_row = clamp_top_line(top_row - 1, (int)visual_rows.size(), ui.content_height());
         break;
 
       case UI_ACTION::SCROLL_DOWN:
-        top_line = clamp_top_line(top_line + 1, (int)lines.size(), ui.content_height());
-        following = (top_line >= max(0, (int)lines.size() - ui.content_height()));
+        top_row = clamp_top_line(top_row + 1, (int)visual_rows.size(), ui.content_height());
+        following = (top_row >= max(0, (int)visual_rows.size() - ui.content_height()));
         break;
 
       case UI_ACTION::PAGE_UP:
         following = false;
-        top_line = clamp_top_line(top_line - ui.content_height(), (int)lines.size(), ui.content_height());
+        top_row = clamp_top_line(top_row - ui.content_height(), (int)visual_rows.size(), ui.content_height());
         break;
 
       case UI_ACTION::PAGE_DOWN:
-        top_line = clamp_top_line(top_line + ui.content_height(), (int)lines.size(), ui.content_height());
-        following = (top_line >= max(0, (int)lines.size() - ui.content_height()));
+        top_row = clamp_top_line(top_row + ui.content_height(), (int)visual_rows.size(), ui.content_height());
+        following = (top_row >= max(0, (int)visual_rows.size() - ui.content_height()));
         break;
 
       case UI_ACTION::GOTO_TOP:
         following = false;
-        top_line = 0;
+        top_row = 0;
         break;
 
       case UI_ACTION::GOTO_BOTTOM:
         following = true;
-        top_line = clamp_top_line((int)lines.size(), (int)lines.size(), ui.content_height());
+        top_row = clamp_top_line((int)visual_rows.size(), (int)visual_rows.size(), ui.content_height());
         break;
 
       case UI_ACTION::GOTO_LINE:
         following = false;
-        top_line = clamp_top_line(result.goto_line - 1, (int)lines.size(), ui.content_height());
+        top_row = clamp_top_line(visual_row_for_source_line(visual_rows, result.goto_line - 1),
+                                  (int)visual_rows.size(), ui.content_height());
         break;
 
       case UI_ACTION::NONE:

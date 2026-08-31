@@ -31,6 +31,37 @@ static int digit_count(size_t Value)
   return count;
 }
 
+vector<VISUAL_ROW> wrap_lines(const vector<string> &Lines, int Width)
+{
+  vector<VISUAL_ROW> rows;
+
+  size_t width = (size_t)max(1, Width);
+
+  for (int i = 0; i < (int)Lines.size(); ++i)
+  {
+    const string &line = Lines[(size_t)i];
+
+    if (line.empty())
+    {
+      rows.push_back(VISUAL_ROW{i, true, ""});
+      continue;
+    }
+
+    size_t pos = 0;
+    bool first = true;
+
+    while (pos < line.size())
+    {
+      size_t take = min(width, line.size() - pos);
+      rows.push_back(VISUAL_ROW{i, first, line.substr(pos, take)});
+      pos += take;
+      first = false;
+    }
+  }
+
+  return rows;
+}
+
 void TERMINAL_UI::init()
 {
   initscr();
@@ -54,6 +85,17 @@ int TERMINAL_UI::content_height() const
 {
   // One row for the status bar, one for the command line.
   return max(0, rows - 2);
+}
+
+int TERMINAL_UI::gutter_width(size_t Total_Source_Lines) const
+{
+  return max(3, digit_count(Total_Source_Lines));
+}
+
+int TERMINAL_UI::content_text_width(size_t Total_Source_Lines) const
+{
+  // Gutter, then a space and a separator before the text starts.
+  return cols - (gutter_width(Total_Source_Lines) + 3);
 }
 
 UI_INPUT_RESULT TERMINAL_UI::poll_input()
@@ -136,8 +178,9 @@ UI_INPUT_RESULT TERMINAL_UI::poll_input()
   return result;
 }
 
-void TERMINAL_UI::draw(const vector<string> &Lines, const string &Filename,
-                        const string &Last_Change_Time, bool Following, int Top_Line)
+void TERMINAL_UI::draw(const vector<VISUAL_ROW> &Visual_Rows, size_t Total_Source_Lines,
+                        const string &Filename, const string &Last_Change_Time,
+                        bool Following, int Top_Row)
 {
   erase();
 
@@ -148,13 +191,14 @@ void TERMINAL_UI::draw(const vector<string> &Lines, const string &Filename,
   {
     status += "[FOLLOWING]";
   }
-  else if (!Lines.empty())
+  else if (Top_Row >= 0 && Top_Row < (int)Visual_Rows.size())
   {
-    status += "line " + to_string(Top_Line + 1) + "/" + to_string(Lines.size());
+    status += "line " + to_string(Visual_Rows[(size_t)Top_Row].source_line + 1) +
+               "/" + to_string(Total_Source_Lines);
   }
   else
   {
-    status += "line 0/0";
+    status += "line 0/" + to_string(Total_Source_Lines);
   }
 
   attron(A_REVERSE);
@@ -164,24 +208,30 @@ void TERMINAL_UI::draw(const vector<string> &Lines, const string &Filename,
 
   // ---- Content area, with a line-number gutter ----
   int content_h = content_height();
-  int gutter_w = max(3, digit_count(Lines.size()));
+  int gutter_w = gutter_width(Total_Source_Lines);
 
   for (int i = 0; i < content_h; ++i)
   {
-    int line_index = Top_Line + i;
+    int row_index = Top_Row + i;
     int screen_row = 1 + i;
 
-    if (line_index >= 0 && line_index < (int)Lines.size())
+    if (row_index >= 0 && row_index < (int)Visual_Rows.size())
     {
-      string num_str = to_string(line_index + 1);
-      if ((int)num_str.size() < gutter_w)
-      {
-        num_str = string((size_t)gutter_w - num_str.size(), ' ') + num_str;
-      }
+      const VISUAL_ROW &row = Visual_Rows[(size_t)row_index];
 
-      attron(A_DIM);
-      mvaddnstr(screen_row, 0, num_str.c_str(), gutter_w);
-      attroff(A_DIM);
+      if (row.is_first_segment)
+      {
+        string num_str = to_string(row.source_line + 1);
+        if ((int)num_str.size() < gutter_w)
+        {
+          num_str = string((size_t)gutter_w - num_str.size(), ' ') + num_str;
+        }
+
+        attron(A_DIM);
+        mvaddnstr(screen_row, 0, num_str.c_str(), gutter_w);
+        attroff(A_DIM);
+      }
+      // Wrapped continuation rows leave the gutter blank.
 
       mvaddch(screen_row, gutter_w + 1, '|');
 
@@ -190,7 +240,7 @@ void TERMINAL_UI::draw(const vector<string> &Lines, const string &Filename,
 
       if (text_w > 0)
       {
-        mvaddnstr(screen_row, text_x, Lines[(size_t)line_index].c_str(), text_w);
+        mvaddnstr(screen_row, text_x, row.text.c_str(), text_w);
       }
     }
     else

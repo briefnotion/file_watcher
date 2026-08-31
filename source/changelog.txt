@@ -4,6 +4,8 @@
     line for "q" to quit or a line number to jump to.
   - Dropped the Boost dependency; file-change detection now uses
     plain POSIX stat().
+  - Long lines wrap onto extra screen rows instead of being cut off
+    at the right edge.
 
 0.004_250212
   - Added a begin and end to the file Output

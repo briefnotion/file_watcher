@@ -28,6 +28,9 @@ around.
   as you haven't scrolled away from the bottom.
 - **Line numbers**: a gutter on the left shows the line number of every
   displayed line.
+- **Wrapping**: a line longer than the screen wraps onto the following
+  screen row(s) instead of being cut off; the gutter only shows the line
+  number on the first row of a wrapped line.
 - **Status bar**: the top line shows the filename, the time of the last
   detected change, and either `[FOLLOWING]` or your current line position.
 - **Resizable**: resizing the terminal reflows the view immediately.
